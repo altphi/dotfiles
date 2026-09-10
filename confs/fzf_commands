@@ -12,3 +12,4 @@ nmcli radio wifi on
 nmcli device wifi list
 sudo nix-collect-garbage -d
 nix-collect-garbage -d
+ping google.com

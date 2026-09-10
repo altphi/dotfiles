@@ -53,7 +53,6 @@ in
     viAlias = true;
     vimAlias = true;
 
-    # Core
     globals = {
       loaded_netrw = 1;
       loaded_netrwPlugin = 1;
@@ -183,19 +182,8 @@ in
         action = ":m '<-2<CR>gv=gv";
         options.desc = "Move selection up";
       }
-      # flash, TODO
-      {
-        mode = "o";
-        key = "r";
-        action = "<cmd>lua require('flash').remote()<CR>";
-        options = {
-          desc = "Flash remote";
-          silent = true;
-        };
-      }
     ];
 
-    # Packages
     extraPackages = with pkgs; [
       akkuPackages.scheme-langserver
       bash-language-server
@@ -261,7 +249,6 @@ in
       yazi-nvim
     ];
 
-    # Syntax highlighting
     extraFiles = {
       "after/ftplugin/help.lua".text = disableSyntaxAfterFtplugin;
       "after/ftplugin/lua.lua".text = luaAfterFtplugin;
@@ -272,10 +259,8 @@ in
       '';
     };
 
-    # LSP
     lsp.inlayHints.enable = false;
 
-    # Lua
     extraConfigLua = builtins.concatStringsSep "\n" [
       debugAdapterPaths
       (builtins.readFile ./nixvim.lua)

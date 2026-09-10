@@ -172,6 +172,7 @@ switch-home() (
   home-manager switch -b backup --flake "$flake_path"
   home-manager expire-generations "-7 days" --flake "$flake_path"
   nix profile wipe-history --older-than 7d
+  rm -f ~/.zsh/cache/direnv_hook
 )
 
 find_symbol() {
@@ -594,6 +595,7 @@ _self_completing() {
 }
 
 compdef _self_completing airpods.sh
+[[ -f ~/code/clt2/src/commands/completion.zsh ]] && source ~/code/clt2/src/commands/completion.zsh
 
 # make sure ctrl-d from zsh kills a tmux pane (tmux will keep unexpected failure-panes open for inspection)
 if [[ -n $TMUX && -o interactive ]]; then

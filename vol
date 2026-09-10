@@ -7,9 +7,9 @@ if [[ "$1" == "mute-toggle" ]]; then
 fi
 
 if [[ "$1" == "up" ]]; then
-  INC="0.1+"
+  INC="0.05+"
 else
-  INC="0.1-"
+  INC="0.05-"
 fi
 
 wpctl set-volume @DEFAULT_AUDIO_SINK@ $INC

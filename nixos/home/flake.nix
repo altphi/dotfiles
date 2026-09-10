@@ -31,7 +31,7 @@
     };
   };
 
-  outputs = { self, nixpkgs, nix-index-database, home-manager, nixvim, zen-browser, nixpkgs-unstable, toofan, ... }@inputs:
+  outputs = { nixpkgs, nix-index-database, home-manager, nixvim, zen-browser, nixpkgs-unstable, toofan, ... }:
   let
     system = "x86_64-linux";
     allowedUnfree = [
@@ -84,9 +84,10 @@
             aerc
             akkuPackages.scheme-langserver
             #algol68g
-            #amp-cli
             anki-bin
             ast-grep
+            awscli2
+            ssm-session-manager-plugin
             bat
             #bzflag
             chez
@@ -107,7 +108,6 @@
             emmylua-ls
             etlegacy
             etlegacy-assets
-            # eww
             exercism
             exiftool
             firefox-bin-unwrapped
@@ -119,7 +119,6 @@
             git-open
             gnuplot_qt
             grim
-            grok-build
             gtypist
             hyprlock
             iamb
@@ -128,11 +127,6 @@
             delta
             difftastic
             jetbrains.datagrip
-            kubeaudit
-            kubetui
-            kube-bench
-            kube-linter
-            kubectl-graph
             lazygit
             libnotify
             libqalculate
@@ -171,7 +165,6 @@
             timer
             tree-sitter
             tt
-            ttyper
             # TODO move to flake
             # (texlive.combine {
             # inherit (texlive) scheme-medium
@@ -191,19 +184,20 @@
             zen
             zip
             zoxide
-            (import ./custom_derivations/tableplus.nix { inherit pkgs; })
-            awscli2
+            zulip
+            zulip-term
+            # (import ./custom_derivations/tableplus.nix { inherit pkgs; })
             # libreoffice  TODO move me to a separate nix flake in a directory to avoid heavy updates
           ] ++ [
             # pkgs-unstable.fastmail-desktop
-            pkgs-unstable.claude-code
+            # pkgs-unstable.claude-code
             pkgs-unstable.spotify
             pkgs-unstable.codex
             pkgs-unstable.ncspot
             pkgs-unstable.jjui
             pkgs-unstable.jujutsu
-            pkgs-unstable.herdr
             pkgs-unstable.ffmpeg_9
+            pkgs-unstable.grok-build
           ];
 
           programs = {

@@ -31,7 +31,7 @@
   };
 
   boot.loader.systemd-boot.enable = false;
-  boot.kernelPackages = pkgs.linuxPackages_7_1;
+  boot.kernelPackages = pkgs.linuxPackages_7_2;
   boot.kernelModules = [ "i2c-dev" ];
   boot.kernelParams = [ "console=tty3" "resume=UUID=9c6645d4-4d56-444b-8f32-36890a1c8dae" "video=eDP-1:1920x1080@60" "video=DP-7:1920x1080@60" ];
   boot.loader.efi.canTouchEfiVariables = true;
@@ -58,9 +58,13 @@
   networking.firewall = {
     enable = true;
     trustedInterfaces = [ "docker0" ];
+    # ports 22000 and 21027 => syncthing
+    # 5154 bzFlag
     interfaces."wlp194s0" = {
-      # 22000 and 21027 => syncthing
-      # 5154 bzFlag
+      allowedTCPPorts = [ 22000 ];
+      allowedUDPPorts = [ 22000 21027 ];
+    };
+    interfaces."enp195s0f0" = {
       allowedTCPPorts = [ 22000 ];
       allowedUDPPorts = [ 22000 21027 ];
     };
@@ -149,6 +153,7 @@
     pwvucontrol
     rocmPackages.rocminfo
     runit
+    syshud
     theme-sh
     tlp
     tmux
