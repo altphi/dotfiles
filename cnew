@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+if [ $# -lt 1 ]
+  then
+    echo "usage: $0 problem_number"; exit 1;
+  else
+    cd ~/code/rusty/cses/ || exit
+    target="./p${1}/"
+    if [[ -e "$target" ]]; then
+      echo "$target already exists";
+      exit 1
+    fi
+
+    mkdir -p "$target"
+    cd "$target" || exit
+
+    cargo init --name "p${1:?name}" --edition 2021 &&
+    awk 'BEGIN{p=0} /^\[package\]/{p=1} p&&/^edition =/{print; print "rust-version = \"1.75\""; next} {print}' "${2:-.}/Cargo.toml" > "${2:-.}/Cargo.toml.tmp" &&
+    mv "${2:-.}/Cargo.toml.tmp" "${2:-.}/Cargo.toml"
+fi

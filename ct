@@ -14,7 +14,7 @@ run_test () {
   EXPECTED=$(cat test/"${1}".out)
 
   if [[ "$ACTUAL" == "$EXPECTED" ]]; then
-    if [[ "$TEST_NUM" != "ALL" ]]; then
+    if [[ "$TEST_NUM" != "" ]]; then
       echo "---"
       printf '%sAC%s\n' "$GREEN" "$RESET"
     fi
@@ -22,11 +22,12 @@ run_test () {
     echo "---"
     printf "%sTest $1 failed%s\n" "$RED" "$RESET"
     echo "$ACTUAL"
+    printf "\r\n";
     echo "$EXPECTED"
   fi
 }
 
-if [[ "$TEST_NUM" == "ALL" ]]; then
+if [[ "$TEST_NUM" == "" ]]; then
   mapfile -t nums < <(printf '%s\n' ./test/*.in | sed 's|.*/||; s|\.in$||' | sort -n)
   for n in "${nums[@]}"; do
     run_test "$n"
