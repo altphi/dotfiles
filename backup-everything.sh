@@ -1,15 +1,21 @@
 #!/usr/bin/env bash
 set -a
 
+RSYNC_OPTS=(
+-aP
+--delete
+--mkpath)
+
 SRC_CONFIG="${HOME}/.config/"
 SRC_VAULTS="${HOME}/vaults/"
 SRC_TODOS="${HOME}/todos/"
 
 TGT_DROPBOX="${HOME}/Dropbox/backups/"
 TGT_SYNCTHING="${HOME}/syncedthings/backups/"
+TGT_SEAGATE_DRIVE="/mnt/seagate-backup/backups/"
 
 sync() {
-	rsync -aP --delete \
+	rsync "${RSYNC_OPTS[@]}" \
 		--exclude="Slack/" \
 		--exclude="HEY/" \
 		--exclude="Code - OSS/" \
@@ -26,12 +32,13 @@ sync() {
 		--exclude="zsh/.zcompdump*" \
 		"${SRC_CONFIG}" "${1}dotconfig/"
 
-	rsync -aP --delete "${SRC_VAULTS}" "${1}vaults/"
-	rsync -aP --delete "${SRC_TODOS}" "${1}todos/"
+	rsync "${RSYNC_OPTS[@]}" "${SRC_VAULTS}" "${1}vaults/"
+	rsync "${RSYNC_OPTS[@]}" "${SRC_TODOS}" "${1}todos/"
 }
 
 sync "${TGT_DROPBOX}"
 sync "${TGT_SYNCTHING}"
+sync "${TGT_SEAGATE_DRIVE}"
 
 # .local/share
 # SRC_SHARE="${HOME}/.local/share/"
@@ -40,7 +47,11 @@ sync "${TGT_SYNCTHING}"
 dotssh() (
 	cd "$HOME" || exit
 	tar --numeric-owner --xattrs --acls -czf .ssh-backup.tar.gz .ssh
-	gpg -e -r beck@j38.uk -o "${TGT_SYNCTHING}dotssh.tar.gz.gpg" .ssh-backup.tar.gz
+	gpg -e -r beck@j38.uk -o ".dotssh.tar.gz.gpg" .ssh-backup.tar.gz
+
+  rsync "${RSYNC_OPTS[@]}" .dotssh.tar.gz.gpg "${TGT_SEAGATE_DRIVE}/backup_ssh_keys/dotssh.tar.gz.gpg"
+  rsync "${RSYNC_OPTS[@]}" .dotssh.tar.gz.gpg "${TGT_SYNCTHING}/backup_ssh_keys/dotssh.tar.gz.gpg"
+	rm .dotssh.tar.gz.gpg
 	rm .ssh-backup.tar.gz
 )
 dotssh

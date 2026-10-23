@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# script for running codeforces tests with rust
+
 shopt -s nullglob
 
 PROBLEM="${PWD##*/}"

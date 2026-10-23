@@ -548,6 +548,8 @@ _load_cached "$_fzf_cache" fzf --zsh
 
 unset -f _load_cached
 
+source ~/.direnv.zsh
+
 # fix double paste issue in Wayland
 unset zle_bracketed_paste
 source ~/.secret-env
@@ -717,3 +719,4 @@ kattis() {
   open "https://open.kattis.com/problems/${name}"
 }
 
+R() { command R --no-save --no-restore "$@"; }

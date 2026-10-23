@@ -43,6 +43,11 @@
     configurationLimit = 5;
     memtest86.enable = true;
   };
+  fileSystems."/mnt/seagate-backup" = {
+    device = "/dev/disk/by-uuid/eae58cf7-bb04-46c8-b8d6-0663210b4596";
+    fsType = "ext4";
+    options = [ "nofail" "x-systemd.device-timeout=5s" ];
+  };
   networking.hostName = "euclid";
   networking.networkmanager.enable = true;
   networking.hosts = {
