@@ -3,6 +3,105 @@
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
 { config, lib, pkgs, modulesPath, unstable, inputs, ... }:
+
+let
+  jjRelax = pkgs.writeShellScriptBin "jj-relax-shared" ''
+    set -eu
+    if [ "$#" -ne 1 ]; then
+      echo "usage: jj-relax-shared /srv/code/<name>/.jj" >&2
+      exit 1
+    fi
+    jjdir=$(readlink -f -- "$1")
+    case $jjdir in
+      /srv/code/*/.jj) ;;
+      *) echo "refusing $jjdir" >&2; exit 1 ;;
+    esac
+    [ -d "$jjdir" ] || exit 0
+    find "$jjdir" \( -type f -o -type d \) ! -perm -g=r -exec chmod g+rwX {} +
+  '';
+
+  jjWrapper = pkgs.writeShellScriptBin "jj" ''
+    real=${unstable.jujutsu}/bin/jj
+    version=${unstable.jujutsu.version}
+    relax=${jjRelax}/bin/jj-relax-shared
+    if [ -t 2 ] && printf '%s\n' 0.47 "$version" | sort -V -C; then
+      printf '%s\n' \
+        "jj $version includes the shared-repo permission fix." \
+        "Remove jjWrapper, jjRelax, and security.sudo.extraRules for jj-relax-shared from ~/bin/nixos/sys/configuration.nix, and put unstable.jujutsu back in environment.systemPackages." >&2
+    fi
+
+    uid=$(id -u)
+    repo=
+    args=("$@")
+    i=0
+    while (( i < ''${#args[@]} )); do
+      arg=''${args[$i]}
+      case $arg in
+        -R|--repository)
+          i=$((i + 1))
+          repo=''${args[$i]}
+          ;;
+        --repository=*)
+          repo=''${arg#--repository=}
+          ;;
+        --) break ;;
+        -*) ;;
+        *) break ;;
+      esac
+      i=$((i + 1))
+    done
+
+    if [ -n "$repo" ]; then
+      ws=$(cd "$repo" 2>/dev/null && pwd -P) || ws=
+    else
+      ws=$PWD
+      while [ "$ws" != / ]; do
+        [ -d "$ws/.jj" ] && break
+        ws=$(dirname "$ws")
+      done
+      [ -d "$ws/.jj" ] || ws=
+    fi
+
+    jjdir=
+    case $ws in
+      /srv/code|/srv/code/*)
+        [ -d "$ws/.jj" ] && jjdir=$ws/.jj
+        ;;
+    esac
+
+    if [ -n "$jjdir" ]; then
+      for f in "$jjdir/repo/config-id" "$jjdir/working_copy/tree_state" "$jjdir/working_copy/checkout"; do
+        if [ -e "$f" ] && [ ! -r "$f" ]; then
+          sudo -n "$relax" "$jjdir" || true
+          break
+        fi
+      done
+    fi
+
+    "$real" "$@"
+    status=$?
+    [ -n "$jjdir" ] || exit "$status"
+
+    relax_one() {
+      f=$1
+      [ -e "$f" ] || return 0
+      [ "$(stat -c %u "$f")" = "$uid" ] || return 0
+      mode=$(stat -c %a "$f")
+      group=$(( (10#$mode / 10) % 10 ))
+      if (( (group & 4) == 0 )); then
+        chmod g+rwX "$f" || true
+      fi
+    }
+    relax_one "$jjdir/repo/config-id"
+    relax_one "$jjdir/workspace-config-id"
+
+    for arg in "$@"; do
+      [ "$arg" = --ignore-working-copy ] && exit "$status"
+    done
+    find "$jjdir" -user "$uid" ! -perm -g=r -exec chmod g+rwX {} +
+    exit "$status"
+  '';
+in
 {
   imports = [
     ./hardware-configuration.nix
@@ -115,6 +214,18 @@
     shell = pkgs.zsh;
   };
 
+  security.sudo.extraRules = [
+    {
+      users = [ "stephen" "agent" ];
+      commands = [
+        {
+          command = "${jjRelax}/bin/jj-relax-shared";
+          options = [ "NOPASSWD" ];
+        }
+      ];
+    }
+  ];
+
   # 2770 is private to the owner and group. The default ACL keeps group write
   # on new files, which a 022 umask would take away.
   systemd.tmpfiles.rules = [
@@ -203,7 +314,7 @@
     bluetuith
     docker
     grok-build
-    jujutsu
+    jjWrapper
   ]);
 
   programs = {

@@ -102,7 +102,7 @@ alias reaper-hidpi=" GDK_SCALE=2 GDK_DPI_SCALE=1 reaper"
 
 alias vim=' nvim'
 alias vi=' nvim'
-alias ls=' ls -GF'
+alias ls=' ls -F'
 alias l=' ls -1'
 alias ll=' ls -lhGF'
 alias la=' ls -lahGF'
