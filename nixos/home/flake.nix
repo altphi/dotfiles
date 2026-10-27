@@ -141,7 +141,6 @@
             ncdu
             nixd
             nmap
-            nodejs_24
             openssl
             pcalc
             playerctl
@@ -195,16 +194,13 @@
             pkgs-unstable.codex
             pkgs-unstable.ncspot
             pkgs-unstable.jjui
-            pkgs-unstable.jujutsu
             pkgs-unstable.ffmpeg_9
-            pkgs-unstable.grok-build
           ];
 
           programs = {
             home-manager.enable = true;
             btop.enable = true;
             chromium.enable = true;
-            gh.enable = true;
             mpv.enable = true;
             zathura =  {
               enable = true;

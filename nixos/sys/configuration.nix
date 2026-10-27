@@ -156,11 +156,13 @@
     fuzzel
     fzf
     git-lfs
+    gh
     gcc
     gnupg
     gnumake
     i2c-tools
     jq
+    nodejs_24
     man-pages
     man-pages-posix
     pass-wayland
@@ -200,6 +202,8 @@
     bluez-tools
     bluetuith
     docker
+    grok-build
+    jujutsu
   ]);
 
   programs = {
