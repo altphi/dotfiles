@@ -68,6 +68,7 @@ if ! tmux list-panes -a -F '#{pane_id}' | grep -qxF "$pane_id"; then
   else
     start_dir="$HOME"
     [ -d "$HOME/code/$session" ] && start_dir="$HOME/code/$session"
+    [ -d "/srv/code/$session" ] && start_dir="/srv/code/$session"
     tmux new-session -d -s "$session" -c "$start_dir" && tmux switch-client -t "=$session"
   fi
 elif ((all_sessions)); then

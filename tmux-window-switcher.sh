@@ -75,6 +75,7 @@ if ! tmux list-windows -a -F '#{window_id}' | grep -qxF "$window_id"; then
   win_name_prompt="$selected"
   start_dir="$HOME"
   [ -d "$HOME/code/$win_name_prompt" ] && start_dir="$HOME/code/$win_name_prompt"
+  [ -d "/srv/code/$win_name_prompt" ] && start_dir="/srv/code/$win_name_prompt"
 
   if tmux has-session -t "=$win_name_prompt" 2>/dev/null; then
     tmux switch-client -t "=$win_name_prompt"
