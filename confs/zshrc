@@ -91,6 +91,9 @@ fi
 for d in ~/code/*(/); do
   hash -d "${d:t}"="$d"
 done
+for d in /srv/code/*(/); do
+  hash -d "${d:t}"="$d"
+done
 alias vpn="~/code/clt-vpn-scripts"
 alias leet="~/code/rusty/leetbox/src/problems"
 
@@ -597,7 +600,7 @@ _self_completing() {
 }
 
 compdef _self_completing airpods.sh
-[[ -f ~/code/clt2/src/commands/completion.zsh ]] && source ~/code/clt2/src/commands/completion.zsh
+[[ -f /srv/code/clt2/src/commands/completion.zsh ]] && source /srv/code/clt2/src/commands/completion.zsh
 
 # make sure ctrl-d from zsh kills a tmux pane (tmux will keep unexpected failure-panes open for inspection)
 if [[ -n $TMUX && -o interactive ]]; then

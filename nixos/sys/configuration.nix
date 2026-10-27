@@ -96,20 +96,39 @@
     options = "--delete-older-than 14d";
   };
 
+  users.groups.work = {};
+
   users.users.stephen = {
     isNormalUser = true;
     description = "Stephen";
-    extraGroups = [ "networkmanager" "wheel" "video" "audio" "docker" "i2c" ];
+    extraGroups = [ "networkmanager" "wheel" "video" "audio" "docker" "i2c" "work" ];
     # packages = with pkgs; [];
     shell = pkgs.zsh;
   };
+
+  # Locked for login. `sudo -u agent` still works.
+  # Primary group is work, so files this account creates are group work.
+  users.users.agent = {
+    isNormalUser = true;
+    description = "Shared workspace account for agents";
+    group = "work";
+    shell = pkgs.zsh;
+  };
+
+  # 2770 is private to the owner and group. The default ACL keeps group write
+  # on new files, which a 022 umask would take away.
+  systemd.tmpfiles.rules = [
+    "d /srv/code 2770 stephen work - -"
+    "a+ /srv/code - - - - g:work:rwx"
+    "a+ /srv/code - - - - d:u::rwx,d:g::rwx,d:g:work:rwx,d:m::rwx,d:o::-"
+  ];
 
   services.fwupd.enable = true;
   services.udev.packages = [ pkgs.ddcutil ];
   nixpkgs.config.allowUnfree = true;
   nix.settings = {
     experimental-features = ["nix-command" "flakes"];
-    allowed-users = [ "stephen" ];
+    allowed-users = [ "stephen" "agent" ];
     auto-optimise-store = true;
     extra-substituters = [
       "https://nix-community.cachix.org"
