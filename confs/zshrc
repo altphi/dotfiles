@@ -472,6 +472,27 @@ fname() {
     grep -iF -- "$*"
 }
 
+grok() {
+  if [[ ${USER:-} == stephen ]]; then
+    print -u2 "grok runs as the agent user:"
+    print -u2 "  grok-agent <name under /srv/code>"
+    return 1
+  fi
+  command grok "$@"
+}
+
+grok-agent() {
+  local repo=$1
+  if [[ -z $repo || $repo == */* || ! -d /srv/code/$repo ]]; then
+    print -u2 "usage: grok-agent <name under /srv/code>"
+    return 1
+  fi
+  shift
+  sudo -u agent -H -- /run/current-system/sw/bin/bash -lc \
+    'cd "$1" && exec /run/current-system/sw/bin/grok "${@:2}"' \
+    _ "/srv/code/$repo" "$@"
+}
+
 # timer script, e.g. `t minutes title`
 #t() {
 #  bash -c "sleep \"$((60*$1))\" && echo -e \"$2\" | notify-send --app-name=timer-script 'Time is up!' \"$2\"" &
