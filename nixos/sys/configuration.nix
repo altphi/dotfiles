@@ -314,26 +314,6 @@
     });
   '';
 
-#  xdg.portal = {
-#    enable = true;
-#    wlr.enable = true;
-#    extraPortals = [
-#      pkgs.xdg-desktop-portal-wlr
-#      pkgs.xdg-desktop-portal-gnome
-#      pkgs.xdg-desktop-portal-gtk
-#    ];
-#    configPackages = [
-#      pkgs.darkman
-#    ];
-#    config.common = {
-#      default = [ "wlr" "gnome" ];
-#      "org.freedesktop.impl.portal.FileChooser" = "gtk";
-#      "org.freedesktop.impl.portal.Settings" = "darkman";
-#      "org.freedesktop.impl.portal.Screencast" = "wlr";
-#      "org.freedesktop.impl.portal.Screenshot" = "wlr";
-#    };
-#  };
-
   xdg.portal = {
     enable = true;
     extraPortals = [ pkgs.xdg-desktop-portal-gnome ];
@@ -350,10 +330,6 @@
   };
 
   services.gnome.gnome-keyring.enable = true;
-  #services.dbus.packages = [
-  #  pkgs.gnome-session
-  #  pkgs.gnome-shell
-  #];
 
   environment.sessionVariables = {
     NIXOS_OZONE_WL = "1"; # Enable Wayland support for Electron/Chromium apps
