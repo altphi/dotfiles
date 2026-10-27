@@ -1,83 +1,109 @@
 #!/usr/bin/env bash
-# Move the clt2 Grok sessions from this account into the agent account,
-# point their recorded workspace at /srv/code/clt2, and copy the
-# theme and other user settings. Does not copy auth.json.
+# Move Grok sessions for every repo now in /srv/code into the agent
+# account, and point each recorded workspace at the new path.
+# Also copies theme and user settings. Does not copy auth.json.
 set -euo pipefail
 
 if [[ "${EUID}" -ne 0 ]]; then
   exec sudo -H "$0" "$@"
 fi
 
-src=/home/stephen/.grok/sessions/%2Fhome%2Fstephen%2Fcode%2Fclt2
-dest_root=/home/agent/.grok/sessions
-dest="${dest_root}/%2Fsrv%2Fcode%2Fclt2"
+sessions=/home/stephen/.grok/sessions
+agent_grok=/home/agent/.grok
+dest_root="${agent_grok}/sessions"
+srv=/srv/code
 
-if [[ ! -d "${src}" ]]; then
-  echo "source sessions not found: ${src}" >&2
-  exit 1
-fi
-if [[ -e "${dest}" ]]; then
-  echo "destination already exists: ${dest}" >&2
-  exit 1
-fi
+install -d -m 700 -o agent -g work "${agent_grok}" "${dest_root}"
 
-/run/current-system/sw/bin/node --input-type=module - "${src}" <<'JS'
-import { readdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
-
-const root = process.argv[2];
-const oldRepo = "/home/stephen/code/clt2";
-const newRepo = "/srv/code/clt2";
-const oldGrok = "/home/stephen/.grok";
-const newGrok = "/home/agent/.grok";
-const names = new Set(["summary.json", "prompt_context.json", "plan.json", "meta.json"]);
-let files = 0;
-
-async function walk(dir) {
-  for (const entry of await readdir(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      await walk(full);
-      continue;
-    }
-    if (!names.has(entry.name)) continue;
-    const text = await readFile(full, "utf8");
-    const next = text.split(oldRepo).join(newRepo).split(oldGrok).join(newGrok);
-    if (next === text) continue;
-    await writeFile(full, next);
-    files += 1;
-  }
-}
-
-await walk(root);
-console.log(`updated ${files} metadata files`);
-JS
-
-install -d -m 700 -o agent -g work /home/agent/.grok "${dest_root}"
-
-# Theme lives in config.toml. There is no pager.toml.
-install -m 600 -o agent -g work /home/stephen/.grok/config.toml /home/agent/.grok/config.toml
-install -m 644 -o agent -g work /home/stephen/.grok/AGENTS.md /home/agent/.grok/AGENTS.md
+install -m 600 -o agent -g work /home/stephen/.grok/config.toml "${agent_grok}/config.toml"
+install -m 644 -o agent -g work /home/stephen/.grok/AGENTS.md "${agent_grok}/AGENTS.md"
 
 trust=$(mktemp)
 trap 'rm -f "${trust}"' EXIT
-cat >"${trust}" <<'EOF'
-[folders."/srv/code/clt2"]
-trusted = true
-EOF
-install -m 600 -o agent -g work "${trust}" /home/agent/.grok/trusted_folders.toml
+{
+  for dir in "${srv}"/*/; do
+    [[ -d "${dir}" ]] || continue
+    repo=${dir%/}
+    printf '[folders."%s"]\ntrusted = true\n\n' "${repo}"
+  done
+} >"${trust}"
+install -m 600 -o agent -g work "${trust}" "${agent_grok}/trusted_folders.toml"
 
-mv "${src}" "${dest}"
-chown -R agent:work "${dest}"
-
-count=$(find "${dest}" -mindepth 1 -maxdepth 1 -type d | wc -l)
-cwd=$(/run/current-system/sw/bin/node --input-type=module -e '
-import { readdir, readFile } from "node:fs/promises";
+/run/current-system/sw/bin/node --input-type=module <<'JS'
+import { readdir, readFile, writeFile, rename, stat } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
 import path from "node:path";
-const root = process.argv[1];
-const [id] = (await readdir(root)).filter((name) => !name.startsWith("."));
-const summary = JSON.parse(await readFile(path.join(root, id, "summary.json"), "utf8"));
-console.log(summary.info.cwd);
-' "${dest}")
-echo "moved ${count} sessions to ${dest}"
-echo "sample cwd: ${cwd}"
+
+const sessions = "/home/stephen/.grok/sessions";
+const destRoot = "/home/agent/.grok/sessions";
+const srv = "/srv/code";
+const oldPrefix = "/home/stephen/code/";
+const newPrefix = "/srv/code/";
+const oldGrok = "/home/stephen/.grok";
+const newGrok = "/home/agent/.grok";
+const names = new Set(["summary.json", "prompt_context.json", "plan.json", "meta.json"]);
+
+const tops = new Set();
+for (const name of await readdir(srv)) {
+  const st = await stat(path.join(srv, name));
+  if (st.isDirectory()) tops.add(name);
+}
+
+function retarget(text, oldCwd, newCwd) {
+  const escaped = oldCwd.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const next = text.replace(new RegExp(escaped + "(?=/|$)", "g"), newCwd);
+  return next.split(oldGrok).join(newGrok);
+}
+
+async function rewrite(dir, oldCwd, newCwd) {
+  let files = 0;
+  async function walk(current) {
+    for (const entry of await readdir(current, { withFileTypes: true })) {
+      const full = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        await walk(full);
+        continue;
+      }
+      if (!names.has(entry.name)) continue;
+      const text = await readFile(full, "utf8");
+      const next = retarget(text, oldCwd, newCwd);
+      if (next === text) continue;
+      await writeFile(full, next);
+      files += 1;
+    }
+  }
+  await walk(dir);
+  return files;
+}
+
+let moved = 0;
+let skipped = 0;
+for (const name of (await readdir(sessions)).sort()) {
+  let cwd;
+  try {
+    cwd = decodeURIComponent(name);
+  } catch {
+    continue;
+  }
+  if (!cwd.startsWith(oldPrefix)) continue;
+  const rel = cwd.slice(oldPrefix.length);
+  const top = rel.split("/")[0];
+  if (!tops.has(top)) continue;
+  const newCwd = newPrefix + rel;
+  const src = path.join(sessions, name);
+  const dest = path.join(destRoot, encodeURIComponent(newCwd));
+  if (await stat(dest).then(() => true, () => false)) {
+    console.log(`skip ${rel}: destination exists`);
+    skipped += 1;
+    continue;
+  }
+  const files = await rewrite(src, cwd, newCwd);
+  await rename(src, dest);
+  const chown = spawnSync("chown", ["-R", "agent:work", dest], { stdio: "inherit" });
+  if (chown.status !== 0) process.exit(chown.status ?? 1);
+  const sessionsInGroup = (await readdir(dest)).filter((entry) => !entry.startsWith(".")).length;
+  console.log(`moved ${rel} -> ${newCwd} (${sessionsInGroup} sessions, ${files} metadata files)`);
+  moved += 1;
+}
+console.log(`done: ${moved} groups moved, ${skipped} skipped`);
+JS
