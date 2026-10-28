@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# Make /srv/code trees usable by both accounts in group work.
+# Directories become setgid 2770. Files become group-writable and private
+# to the group. A default ACL keeps that for new files despite umask 022.
+set -euo pipefail
+
+if [[ $(id -u) -ne 0 ]]; then
+  exec sudo -- "$0" "$@"
+fi
+
+if (($# == 0)); then
+  set -- /srv/code/*
+fi
+
+for root in "$@"; do
+  if [[ $root != /* ]]; then
+    root=/srv/code/$root
+  fi
+  real=$(readlink -f -- "$root")
+  case $real in
+    /srv/code|/srv/code/*) ;;
+    *)
+      echo "refusing $root" >&2
+      exit 1
+      ;;
+  esac
+  if [[ ! -d $real ]]; then
+    echo "not a directory: $real" >&2
+    exit 1
+  fi
+  echo "$real"
+  chgrp -R -h work "$real"
+  find -P "$real" -type d -exec chmod 2770 {} +
+  find -P "$real" -type f -exec chmod g+rwX,o-rwx {} +
+  find -P "$real" -type d -exec setfacl -m g:work:rwX -d -m u::rwx,g::rwx,g:work:rwx,m::rwx,o::--- {} +
+done
