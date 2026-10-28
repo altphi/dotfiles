@@ -82,6 +82,7 @@ in
       linespace = 2;
       modeline = false;
       modelines = 0;
+      mouse = "nv";
       number = false;
       pumborder = "rounded";
       relativenumber = false;

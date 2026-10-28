@@ -29,10 +29,21 @@
       url = "github:vyrx-dev/toofan";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    grok-bot = {
+      url = "github:jordangarrison/grok-bot-flake";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    ghostty14 = {
+       url = "github:NixOS/nixpkgs/539f911780217ea2a8f694271b68e2e2aae9c7cc";
+    };
+
   };
 
-  outputs = { nixpkgs, nix-index-database, home-manager, nixvim, zen-browser, nixpkgs-unstable, toofan, ... }:
+  outputs = { nixpkgs, nix-index-database, home-manager, nixvim, zen-browser, nixpkgs-unstable, toofan, grok-bot, ghostty14, ... }:
   let
+    ghostty = ghostty14.legacyPackages.${system}.ghostty;
     system = "x86_64-linux";
     allowedUnfree = [
       "anki-bin"
@@ -81,6 +92,7 @@
 
           home.packages = with pkgs; [
             toofan.packages.${pkgs.stdenv.hostPlatform.system}.default
+            grok-bot.packages.${pkgs.stdenv.hostPlatform.system}.default
             aerc
             akkuPackages.scheme-langserver
             #algol68g
@@ -163,7 +175,6 @@
             telegram-desktop
             timer
             tree-sitter
-            tt
             # TODO move to flake
             # (texlive.combine {
             # inherit (texlive) scheme-medium
@@ -191,10 +202,10 @@
             # pkgs-unstable.fastmail-desktop
             # pkgs-unstable.claude-code
             pkgs-unstable.spotify
-            pkgs-unstable.codex
-            pkgs-unstable.ncspot
             pkgs-unstable.jjui
             pkgs-unstable.ffmpeg_9
+            pkgs-unstable.mycli
+            pkgs-unstable.python314Packages.llm-grok
           ];
 
           programs = {
