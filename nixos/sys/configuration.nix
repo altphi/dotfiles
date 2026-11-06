@@ -209,8 +209,9 @@ in
   # Primary group is work, so files this account creates are group work.
   users.users.agent = {
     isNormalUser = true;
-    description = "Shared workspace account for agents";
     group = "work";
+    linger = true;
+    description = "Shared workspace account for agents";
     shell = pkgs.zsh;
   };
 
@@ -248,74 +249,94 @@ in
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
     ];
   };
-  environment.systemPackages = with pkgs; [
-    comma
-    pulsemixer
-    nautilus
-    tuigreet
-    gsettings-desktop-schemas
-    glib-networking
-    acpi
-    alsa-lib
-    alsa-tools
-    alsa-utils
-    brightnessctl
-    cryptsetup
-    curl
-    ddcutil
-    foot
-    fuzzel
-    fzf
-    git-lfs
-    gh
-    gcc
-    gnupg
-    gnumake
-    i2c-tools
-    jq
-    nodejs_24
-    man-pages
-    man-pages-posix
-    pass-wayland
-    pavucontrol
-    pciutils
-    perf
-    php
-    pinentry-all
-    pipewire
-    plocate
-    powertop
-    pstree
-    pulseaudio
-    pwvucontrol
-    rocmPackages.rocminfo
-    runit
-    syshud
-    theme-sh
-    tlp
-    tmux
-    tree
-    unzip
-    usbutils
-    v4l-utils
-    wayland-utils
-    wget
-    wl-clipboard
-    wlr-randr
-    xwayland-satellite
-    xdg-dbus-proxy
-    xdg-desktop-portal
-    xdg-desktop-portal-gnome
-    xdg-desktop-portal-gtk
-  ] ++ (with unstable; [
-    bluez
-    bluez-alsa
-    bluez-tools
-    bluetuith
-    docker
-    grok-build
-    jjWrapper
-  ]);
+
+  environment = {
+      systemPackages = with pkgs; [
+      comma
+      pulsemixer
+      nautilus
+      tuigreet
+      gsettings-desktop-schemas
+      glib-networking
+      acpi
+      alsa-lib
+      alsa-tools
+      alsa-utils
+      brightnessctl
+      cryptsetup
+      curl
+      ddcutil
+      foot
+      fuzzel
+      fzf
+      git-lfs
+      gh
+      gcc
+      gnupg
+      gnumake
+      i2c-tools
+      jq
+      nodejs_24
+      man-pages
+      man-pages-posix
+      pass-wayland
+      pavucontrol
+      pciutils
+      perf
+      php
+      pinentry-all
+      pipewire
+      plocate
+      powertop
+      pstree
+      pulseaudio
+      pwvucontrol
+      rocmPackages.rocminfo
+      runit
+      syshud
+      theme-sh
+      tlp
+      tmux
+      tree
+      unzip
+      usbutils
+      v4l-utils
+      wayland-utils
+      wget
+      wl-clipboard
+      wlr-randr
+      xwayland-satellite
+      xdg-dbus-proxy
+      xdg-desktop-portal
+      xdg-desktop-portal-gnome
+      xdg-desktop-portal-gtk
+    ] ++ (with unstable; [
+      bluez
+      bluez-alsa
+      bluez-tools
+      bluetuith
+      docker
+      grok-build
+      jjWrapper
+    ]);
+
+   sessionVariables = {
+      NIXOS_OZONE_WL = "1"; # Enable Wayland support for Electron/Chromium apps
+      MOZ_ENABLE_WAYLAND = "1"; # Enable Wayland support in Firefox
+      XDG_SESSION_TYPE = "wayland";
+      XDG_CURRENT_DESKTOP = "niri";
+      XDG_SESSION_DESKTOP = "niri";
+    };
+
+  extraInit = ''
+    if [ "$(id -un)" = agent ]; then
+      export XDG_RUNTIME_DIR="''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+      if [ -z "''${DOCKER_HOST:-}" ]; then
+        export DOCKER_HOST="unix://$XDG_RUNTIME_DIR/docker.sock"
+      fi
+    fi
+   '';
+  };
 
   programs = {
     zsh.enable = true;
@@ -442,14 +463,6 @@ in
 
   services.gnome.gnome-keyring.enable = true;
 
-  environment.sessionVariables = {
-    NIXOS_OZONE_WL = "1"; # Enable Wayland support for Electron/Chromium apps
-    MOZ_ENABLE_WAYLAND = "1"; # Enable Wayland support in Firefox
-    XDG_SESSION_TYPE = "wayland";
-    XDG_CURRENT_DESKTOP = "niri";
-     XDG_SESSION_DESKTOP = "niri";
-  };
-
   fonts = {
     packages = with pkgs; [
       dejavu_fonts
@@ -473,7 +486,12 @@ in
   };
 
   security.polkit.enable = true;
-  virtualisation.docker.enable = true;
+  virtualisation.docker = {
+    enable = true;
+    rootless = {
+      enable = true;
+    };
+  };
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions
   # on your system were taken. It‘s perfectly fine and recommended to leave

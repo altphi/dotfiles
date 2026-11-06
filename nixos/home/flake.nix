@@ -35,15 +35,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    ghostty14 = {
-       url = "github:NixOS/nixpkgs/539f911780217ea2a8f694271b68e2e2aae9c7cc";
-    };
-
   };
 
-  outputs = { nixpkgs, nix-index-database, home-manager, nixvim, zen-browser, nixpkgs-unstable, toofan, grok-bot, ghostty14, ... }:
+  outputs = { nixpkgs, nix-index-database, home-manager, nixvim, zen-browser, nixpkgs-unstable, toofan, grok-bot, ... }:
   let
-    ghostty = ghostty14.legacyPackages.${system}.ghostty;
     system = "x86_64-linux";
     allowedUnfree = [
       "anki-bin"
@@ -57,7 +52,6 @@
       "firefox-bin"
       "firefox-bin-unwrapped"
       "grok-build"
-      "datagrip"
       "slack"
       "spotify"
       "vscode-extension-vadimcn-vscode-lldb"
@@ -126,7 +120,6 @@
             fd
             fractal
             gdb
-            ghostty
             git-filter-repo
             git-open
             gnuplot_qt
@@ -138,7 +131,6 @@
             iw
             delta
             difftastic
-            jetbrains.datagrip
             lazygit
             libnotify
             libqalculate
@@ -204,8 +196,12 @@
             pkgs-unstable.spotify
             pkgs-unstable.jjui
             pkgs-unstable.ffmpeg_9
-            pkgs-unstable.mycli
-            pkgs-unstable.python314Packages.llm-grok
+            (pkgs-unstable.mycli.overridePythonAttrs (prev: {
+              dependencies = prev.dependencies ++ [
+              pkgs-unstable.python3Packages.llm-grok
+            ];
+            }))
+            pkgs-unstable.ghostty
           ];
 
           programs = {

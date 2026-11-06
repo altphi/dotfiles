@@ -12,7 +12,7 @@ smart_completion = True
 # this is set to True, then the end of the statements must have a semi-colon.
 # If this is set to False then sql statements can't be split into multiple
 # lines. End of line (return) is considered as the end of the statement.
-multi_line = False
+multi_line = True
 
 # Destructive warning mode will alert you before executing a sql statement
 # that may cause harm to the database such as "drop table", "drop database"
@@ -46,7 +46,7 @@ beep_after_seconds = 0
 # sql-insert, sql-update, sql-update-1, sql-update-2, textile, tsv,
 # tsv_noheader, vertical.
 # Recommended: ascii.
-table_format = ascii
+table_format = simple
 
 # Redirected otuput format
 # Recommended: csv.
@@ -73,7 +73,7 @@ syntax_style = default
 # Keybindings: Possible values: emacs, vi.
 # Emacs mode: Ctrl-A is home, Ctrl-E is end. All emacs keybindings are available in the REPL.
 # When Vi mode is enabled you can use modal editing features offered by Vi in the REPL.
-key_bindings = vi
+key_bindings = emacs
 
 # Enabling this option will show the suggestions in a wider menu. Thus more items are suggested.
 wider_completion_menu = False
@@ -140,7 +140,7 @@ bottom-toolbar.transaction.valid = "bg:#222222 #00ff5f bold"
 bottom-toolbar.transaction.failed = "bg:#222222 #ff005f bold"
 
 # style classes for colored table output
-output.header = "#00ff5f bold"
+output.header = "#777777 bold"
 output.odd-row = ""
 output.even-row = ""
 output.null = "#808080"
