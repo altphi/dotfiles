@@ -78,6 +78,7 @@
         nix-index-database.homeModules.default
         nixvim.homeModules.nixvim
         ./nixvim.nix
+        ./wireplumber.nix
         {
           home.username = "stephen";
           home.homeDirectory = "/home/stephen";
