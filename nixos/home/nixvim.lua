@@ -1009,7 +1009,7 @@ end
 local function configure_keymaps()
   map("n", "'", "`") -- make ' jump straight to mark's column
 
-  map("n", "\\wb", function()
+  map("n", "\\b", function()
     local folder = vim.fn.expand("~/code/blog/posts")
     local date = os.date("%Y-%m-%d")
     local seconds = os.time()
@@ -1037,8 +1037,8 @@ local function configure_keymaps()
   map("n", "]L", "<cmd>llast<CR>zz", { desc = "Last location-list item", silent = true })
   map("n", "[L", "<cmd>lfirst<CR>zz", { desc = "First location-list item", silent = true })
 
-  map("n", "<leader>q", "<cmd>copen<CR>")
-  map("n", "<leader>Q", "<cmd>cclose<CR>")
+  --map("n", "<leader>q", "<cmd>copen<CR>")
+  --map("n", "<leader>Q", "<cmd>cclose<CR>")
   map("n", "<leader>l", "<cmd>lopen<CR>")
   map("n", "<leader>L", "<cmd>lclose<CR>")
 
@@ -1722,26 +1722,27 @@ local function configure_obsidian()
   local function load_personal_workspace()
     vim.cmd("Obsidian workspace personal")
   end
-  map("n", "\\ws", function()
+  map("n", "\\s", function()
     load_personal_workspace()
     vim.cmd("edit " .. vim.fn.expand("~/vaults/sdb/inbox.md"))
   end, { desc = "Load obsidian personal inbox" })
-  map("n", "\\ww", function()
+  map("n", "\\W", function()
     load_clt_workspace()
     vim.cmd("edit " .. vim.fn.expand("~/vaults/clt/inbox.md"))
   end, { desc = "Load obsidian work inbox" })
-  map("n", "\\wt", function()
+  map("n", "\\w", function()
     load_personal_workspace()
     open_vault_file("todo.md")
   end, { desc = "Open Personal todo.md" })
-  map("n", "\\wT", function()
+  map("n", "\\S", function()
     load_clt_workspace()
     open_vault_file("todo.md")
   end, { desc = "Open CLT todo.md" })
-  map("n", "\\wd", function()
-    load_personal_workspace()
-    vim.cmd("Obsidian today")
-  end, { desc = "Open Personal daily" })
+
+  -- map("n", "\\wd", function()
+  --   load_personal_workspace()
+  --   vim.cmd("Obsidian today")
+  -- end, { desc = "Open Personal daily" })
 end
 
 local function configure_folding()
@@ -1955,6 +1956,50 @@ local function configure_readonly_files()
   })
 end
 
+local function configure_qalc_bindings()
+  local function qalc_run(lines)
+    if vim.fn.executable('qalc') == 0 then
+      return vim.notify('qalc not found', vim.log.levels.ERROR)
+    end
+    local tmp = vim.fn.tempname() .. '.qalc'
+    vim.fn.writefile(lines, tmp)
+
+    vim.system({ 'qalc', '-f', tmp }, { text = true }, function(res)
+      vim.schedule(function()
+        vim.fn.delete(tmp)
+        local out = vim.split(res.stdout or '', '\n', { trimempty = true })
+        if res.stderr and res.stderr ~= '' then
+          vim.list_extend(out, vim.split(res.stderr, '\n', { trimempty = true }))
+        end
+        if #out == 0 then out = { '(no output)' } end
+
+        vim.cmd('botright ' .. math.min(#out, 15) .. 'new')
+        local buf = vim.api.nvim_get_current_buf()
+        vim.bo[buf].buftype = 'nofile'
+        vim.bo[buf].bufhidden = 'wipe'
+        vim.bo[buf].swapfile = false
+        vim.api.nvim_buf_set_lines(buf, 0, -1, false, out)
+        vim.bo[buf].modifiable = false
+        vim.keymap.set('n', 'q', '<cmd>close<cr>', { buffer = buf })
+      end)
+    end)
+  end
+
+  vim.keymap.set('n', '<leader>q', function()
+    qalc_run(vim.api.nvim_buf_get_lines(0, 0, -1, false))
+  end, { desc = 'qalc: run buffer' })
+
+  vim.keymap.set('x', '<leader>q', function()
+    local lines = vim.fn.getregion(
+      vim.fn.getpos('v'), vim.fn.getpos('.'),
+      { type = vim.fn.mode(), exclusive = vim.o.selection == 'exclusive' }
+    )
+    vim.api.nvim_feedkeys(vim.keycode('<Esc>'), 'nx', false)
+    qalc_run(lines)
+  end, { desc = 'qalc: run selection' })
+end
+
+
 configure_debugging()
 configure_general_options()
 configure_plugins()
@@ -1977,3 +2022,4 @@ configure_folding()
 configure_telescope_snippets()
 configure_readonly_files()
 configure_syntax_highlighting()
+configure_qalc_bindings()
