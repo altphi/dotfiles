@@ -7,6 +7,7 @@ EXCLUDE=(
 	discord
 	Signal
 	chromium
+  "Grok Bot"
 )
 
 IGNORE_SIZE=(
