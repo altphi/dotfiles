@@ -70,6 +70,16 @@
       inherit system;
       config.allowUnfreePredicate = pkg: builtins.elem (nixpkgs-unstable.lib.getName pkg) allowedUnfree;
     };
+
+    slackWithBrowser = pkgs.symlinkJoin {
+      name = "slack-with-browser";
+      paths = [ pkgs.slack ];
+      buildInputs = [ pkgs.makeWrapper ];
+      postBuild = ''
+        wrapProgram $out/bin/slack \
+          --set DEFAULT_BROWSER chromium-browser
+      '';
+    };
   in
   {
     homeConfigurations."stephen" = home-manager.lib.homeManagerConfiguration {
@@ -79,9 +89,9 @@
         nixvim.homeModules.nixvim
         ./nixvim.nix
         ./wireplumber.nix
-        {
+        ({config, ...} : {
           home.username = "stephen";
-          home.homeDirectory = "/home/stephen";
+          home.homeDirectory = "/home/${config.home.username}";
           # The state version is required and should stay at the version you originally installed.
           home.stateVersion = "25.05";  # did you read the comment?
 
@@ -146,6 +156,7 @@
             ncdu
             nixd
             nmap
+            (python3.withPackages (ps: with ps; [ numpy ]))
             openssl
             pcalc
             playerctl
@@ -157,7 +168,7 @@
             rpi-imager
             rustlings
             shfmt
-            slack
+            slackWithBrowser
             signal-desktop
             slurp
             swaybg
@@ -233,7 +244,8 @@
           xdg.mimeApps = {
             enable = true;
             defaultApplications = let
-              defaultBrowser = "zen-beta.desktop";
+                # defaultBrowser = "zen-beta.desktop";
+              defaultBrowser = "default-browser.desktop";
             in
             {
               "image/png" = "swayimg.desktop";
@@ -262,8 +274,37 @@
             easyeffects.enable = true;
           };
 
+          home.file.".local/bin/default-browser.sh" = {
+            executable = true;
+            text = ''
+              #!/usr/bin/env bash
+              if [ -n "$DEFAULT_BROWSER" ]; then
+                exec "$DEFAULT_BROWSER" "$@"
+              else
+                exec zen-beta "$@"
+              fi
+            '';
+          };
 
-        }
+          xdg.desktopEntries.default-browser = {
+            name = "Default Web Browser";
+              # exec = "${config.home.homeDirectory}/.local/bin/default-browser.sh %U";
+            exec = "/home/stephen/.local/bin/default-browser.sh %U";
+            mimeType = [ "x-scheme-handler/http" "x-scheme-handler/https" "text/html" ];
+            terminal = false;
+            type = "Application";
+          };
+
+          xdg.desktopEntries.slack = {
+            name = "Slack";
+            exec = "env DEFAULT_BROWSER=chromium-browser slack %U";
+            icon = "slack";
+            terminal = false;
+            type = "Application";
+            categories = [ "Network" "InstantMessaging" ];
+            mimeType = [ "x-scheme-handler/slack" ];
+          };
+        })
       ];
     };
   };
