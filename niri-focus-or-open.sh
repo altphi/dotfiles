@@ -18,12 +18,12 @@ declare -A apps=(
   ["TablePlus"]="tableplus"
 )
 
-WINDOW_ENTRY=`niri msg -j windows | jq -r '.[] | "\(.app_id),\(.id)"' | grep ${1}`
+WINDOW_ENTRY=$(niri msg -j windows | jq -r '.[] | "\(.app_id),\(.id)"' | grep "${1}")
 
 if [[ ! -z "$WINDOW_ENTRY" ]]; then
   echo "$WINDOW_ENTRY" | head -n 1 | cut -d, -f2 | xargs niri msg action focus-window --id
 elif [[ -n "${apps[$1]+x}" ]]; then
-  niri msg action spawn -- ${apps[$1]}
+  niri msg action spawn -- "${apps[$1]}"
 else
   echo "Error: No window found and no launch command mapped for '$1'"
   exit 1
