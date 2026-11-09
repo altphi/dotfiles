@@ -1726,23 +1726,21 @@ local function configure_obsidian()
     load_personal_workspace()
     vim.cmd("edit " .. vim.fn.expand("~/vaults/sdb/inbox.md"))
   end, { desc = "Load obsidian personal inbox" })
-  map("n", "\\W", function()
+
+  map("n", "\\w", function()
     load_clt_workspace()
     vim.cmd("edit " .. vim.fn.expand("~/vaults/clt/inbox.md"))
   end, { desc = "Load obsidian work inbox" })
-  map("n", "\\w", function()
+
+  map("n", "\\S", function()
     load_personal_workspace()
     open_vault_file("todo.md")
   end, { desc = "Open Personal todo.md" })
-  map("n", "\\S", function()
+
+  map("n", "\\W", function()
     load_clt_workspace()
     open_vault_file("todo.md")
   end, { desc = "Open CLT todo.md" })
-
-  -- map("n", "\\wd", function()
-  --   load_personal_workspace()
-  --   vim.cmd("Obsidian today")
-  -- end, { desc = "Open Personal daily" })
 end
 
 local function configure_folding()
